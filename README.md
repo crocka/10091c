@@ -54,6 +54,12 @@ npm run lint
 npm run dev
 ```
 
+### Run tests
+
+```
+npm test
+```
+
 ---
 
 ## Database

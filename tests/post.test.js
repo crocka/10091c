@@ -79,3 +79,7 @@ describe('PATCH /api/posts/:postId', () => {
     expect(res.status).toEqual(200);
   });
 });
+
+// test for error cases
+// test for update not all fields
+// test sortby and direction

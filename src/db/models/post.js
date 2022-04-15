@@ -39,7 +39,7 @@ const Post = db.define(
   }
 );
 
-Post.getPostsByUserId = async function (userId) {
+Post.getPostsByUserId = async function (userId, obj) {
   return Post.findAll({
     include: [
       {
@@ -51,6 +51,9 @@ Post.getPostsByUserId = async function (userId) {
         },
       },
     ],
+    order: [
+      [obj.sortBy ? obj.sortBy : 'id', obj.direction ? obj.direction : 'asc']
+    ]
   });
 };
 
