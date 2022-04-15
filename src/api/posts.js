@@ -82,20 +82,64 @@ router.patch('/:postId', async (req, res, next) => {
       return res.sendStatus(401);
     }
 
-    if (req.body.authorIds.includes(req.user.id) === false) {
+    // Get postId
+    const { postId } = req.params;
+
+    //Get user_post
+    const authorsObj = await UserPost.findAll(
+
+      {
+        where: { postId: postId }
+      });
+
+    let authors = authorsObj.map(author => author.dataValues.userId).sort((a, b) => a - b);
+
+    // Validate if user is author
+    if (authors.includes(req.user.id) === false) {
       return res
         .status(401)
         .json({ error: 'User is not authorized to make changes' });
     }
 
-    // Get post
-    const { postId } = req.params;
+    // If authorIds is present, update authors
+    if (req.query.authorIds) {
 
+      //find new authors
+      req.query.authorIds.forEach(author => {
+
+        // if new list of authors does not contain the old author, create a new UserPost
+        if (authors.includes(author) === false) {
+
+          UserPost.create({
+            userId: author,
+            postId: postId,
+          });
+
+        }
+
+      });
+
+      authors.forEach(author => {
+
+        // if old list of authors contains authors no longer in the new list, destroy it
+        if (req.query.authorIds.includes(author) === false) {
+
+          UserPost.destroy({
+            where: {userId: author, postId: postId}
+          })
+        }
+
+      });
+
+    }
+
+    // Update post
     await Post.update(
       {
-        tags: req.body.tags.join(),
-        text: req.body.text,
-        authorIds: req.body.authorIds },
+        tags: req.body.tags ? req.body.tags.join() : Post.tags,
+        text: req.body.text ? req.body.text : Post.text,
+        // authorIds: req.body.authorIds ? req.body.authorIds : Post.authorIds 
+      },
       { where: { id: postId } }
     );
 
@@ -108,7 +152,7 @@ router.patch('/:postId', async (req, res, next) => {
     const tagsArr = newPost.tags.split(',');
     newPost.tags = tagsArr;
 
-    res.json({ post: { ...newPost.dataValues, authorIds: req.body.authorIds } });
+    res.json({ post: { ...newPost.dataValues, authorIds: req.body.authorIds ? req.body.authorIds : authors } });
   } catch (error) {
     next(error);
   }
